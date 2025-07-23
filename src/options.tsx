@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 function IndexOptions() {
-  const [data, setData] = useState("")
+  // const [data, setData] = useState("")
 
   return (
     <div
@@ -11,10 +11,12 @@ function IndexOptions() {
         padding: 16
       }}>
       <h1>
-        Welcome to your <a href="https://www.plasmo.com">Plasmo</a> Extension!
+        Settings
       </h1>
-      <input onChange={(e) => setData(e.target.value)} value={data} />
-      <footer>Crafted by @PlasmoHQ</footer>{" "}
+      <p>Currently no settings available.</p>
+      <p>Think there should be some? Join us on GitHub!</p>
+      {/* <input onChange={(e) => setData(e.target.value)} value={data} /> */}
+      <footer>Crafted by @TheBox193</footer>
     </div>
   )
 }

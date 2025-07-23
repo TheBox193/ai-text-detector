@@ -1,20 +1,19 @@
-import { useState } from "react"
-
 function IndexPopup() {
-  const [data, setData] = useState("")
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
+        width: "400px",
         padding: 16
       }}>
       <h1>
-        Welcome to your <a href="https://www.plasmo.com">Plasmo</a> Extension!
+        AI sentence & Word detection
       </h1>
-      <input onChange={(e) => setData(e.target.value)} value={data} />
-      <footer>Crafted by @PlasmoHQ</footer>
+      <p>Currently nothing cool to share here.</p>
+      <p>Think there should be some? Join us on GitHub!</p>
+      <footer>Crafted by @TheBox193</footer>
     </div>
   )
 }
