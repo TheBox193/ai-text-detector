@@ -147,6 +147,7 @@ const WORD_TARGETS = [
   /* marketing-style hooks */
   "Unlock the secrets",
   "Game changer",
+  "reshaping",
   "ever-evolving",
   "Cutting-edge",
   "Designed to enhance",

@@ -7,7 +7,8 @@ import { shouldSkipNode } from "../targets/skipTargets"
 import WORD_TARGETS_FULL from "../targets/wordTargets"
 
 export const config: PlasmoCSConfig = {
-  matches: ["<all_urls>"]
+  matches: ["https://*/*"],
+  run_at: "document_idle"
 }
 
 const STYLE = "background:#ff1493;color:#fff;padding:0 2px;border-radius:5px;"

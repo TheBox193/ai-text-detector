@@ -78,6 +78,15 @@ const SENTENCE_TARGETS: SentenceTargets[] = [
     tags: ["structure", "rhetoric", "binary"]
   },
   {
+    name: "parenthetical-item-list",
+    regex:
+      /\(\s*(e\.g\.|such as|including)?\s*(?:[A-Z][\w\-\.]*(?:\s+[A-Z][\w\-\.]*)?,\s*){1,4}[A-Z][\w\-\.]*(?:\s+[A-Z][\w\-\.]*)?\s*\)/g,
+    description:
+      "Parenthetical list of 2+ capitalized items (e.g., ChatGPT, Claude, Gemini)",
+    severity: "med",
+    tags: ["list", "padding", "structure", "ai-style"]
+  },
+  {
     name: "sets-x-apart-is",
     regex:
       /\b(what|this|that)?\s*sets\s+[^.,;!?]{1,40}\s+apart\s+(is|are|was|were|has|had|can|could|will|would)\s+[^.?!]{3,80}[.?!]/gi,
