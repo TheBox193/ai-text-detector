@@ -1,8 +1,8 @@
 {
-  "name": "ai-detector",
-  "displayName": "Ai detector",
+  "name": "ai-text-detector",
+  "displayName": "AI Text Detector",
   "version": "0.0.1",
-  "description": "Highlight AI-like text",
+  "description": "Detect and highlight AI-generated language on any webpage!",
   "author": "jStassen.com",
   "scripts": {
     "dev": "plasmo dev",
