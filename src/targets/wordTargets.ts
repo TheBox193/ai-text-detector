@@ -2,11 +2,45 @@ import expandPunctuationVariants from "~utils/expandPunctuationVariants";
 
 const WORD_TARGETS = [
   /* punctuation cues */
-  "—",
-  "–",
-  "…",
-  "...",
-  ":",
+  "—", // em-dash
+  "–", // en-dash
+  "…", // Horizontal Ellipsis
+  // "...", // Human-style ellipsis
+  // ":", // Colon
+  "•", // Bullet
+  "‣", // Triangular Bullet
+  "«", // Left guillemet
+  "»", // Right guillemet
+
+  /* space variants */
+  " ", // Non-breaking space (NBSP)
+  " ", // Narrow No-Break Space
+  " ", // En quad
+  " ", // Em quad
+  " ", // Thin space
+  " ", // Hair space
+  " ", // Medium mathematical space
+  "　", // Full-width ideographic space
+  " ", // Three-per-em space
+  " ", // Four-per-em space
+  " ", // Six-per-em space
+  " ", // Figure space
+  " ", // Punctuation space
+
+  /* invisible/control characters */
+  "​", // Zero-width space
+  "‌", // Zero-width non-joiner
+  "‍", // Zero-width joiner
+  "﻿", // Byte order mark (BOM)
+  "­", // Soft hyphen
+
+  /* optional BiDi control (AI watermarks) */
+  // "‎", // left-to-right mark
+  // "‏", // right-to-left mark
+  // "‪", // LTR embedding
+  // "‫", // RTL embedding
+  // "‬", // pop directional formatting
+  // "‭", // LTR override
 
   /* boiler-plate openers / closers */
   "In conclusion",
@@ -22,6 +56,7 @@ const WORD_TARGETS = [
   "In the realm of",
   "To put it simply",
   "Not just",
+  "just not",
   "That is not",
   "and why",
   "One thing is clear",
