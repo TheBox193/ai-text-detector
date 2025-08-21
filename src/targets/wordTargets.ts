@@ -13,7 +13,7 @@ const WORD_TARGETS = [
   "»", // Right guillemet
 
   /* space variants */
-  " ", // Non-breaking space (NBSP)
+  // " ", // Non-breaking space (NBSP)
   " ", // Narrow No-Break Space
   " ", // En quad
   " ", // Em quad
@@ -51,6 +51,8 @@ const WORD_TARGETS = [
   "Join us as we",
   "Take a closer look",
   "Ultimately",
+  "at the end of the day",
+  "when all is said and done",
   "At its core",
   "In today's digital age",
   "In the realm of",
@@ -105,6 +107,7 @@ const WORD_TARGETS = [
 
   /* hedging / meta phrases */
   "question now is",
+  "stands apart",
   "but how",
   "It is important to note",
   "It is worth noting that",
@@ -114,6 +117,7 @@ const WORD_TARGETS = [
   "don't just",
   "can't just",
   "just have to",
+  "we must",
   "That's not",
   "it's about",
   "but rather",
@@ -142,6 +146,9 @@ const WORD_TARGETS = [
   "crucial",
   "Generally speaking",
   "Arguably",
+  "fundamentally",
+  "essentially",
+  "in essence",
   "Broadly speaking",
 
   /* marketing-style hooks */
@@ -195,6 +202,7 @@ const WORD_TARGETS = [
   "underscores",
   "only time will tell",
   "important to note that",
+  "should be noted",
   "It can be argued that",
   "It is widely recognized that",
   "To sum up",
@@ -226,7 +234,10 @@ const WORD_TARGETS = [
   "scalable",
   "synergistic",
   "In a world",
-  "isn't",
+  "only time will tell",
+  "cautionary tale",
+  "demand better",
+  // "isn't",
 
   /* Inflated Modifiers */
   "truly remarkable",

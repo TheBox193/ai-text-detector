@@ -41,25 +41,40 @@ window.addEventListener("load", () => {
   for (let n; (n = walker1.nextNode()); ) nodes1.push(n as Text)
 
   // Pass 1: Sentence-level regex matches
-  for (const node of nodes1) {
-    const original = node.nodeValue
-    for (const { regex, name } of SENTENCE_TARGETS) {
-      const matches = [...original.matchAll(regex)]
+    for (const pattern of SENTENCE_TARGETS) {
+    // Get fresh nodes for each pattern
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (n) =>
+          shouldSkipNode(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+      }
+    )
+
+    const nodes = []
+    for (let n; (n = walker.nextNode()); ) nodes.push(n as Text)
+
+    for (const node of nodes) {
+      const original = node.nodeValue
+      const matches = [...original.matchAll(pattern.regex)]
       if (matches.length === 0) continue
+      
       for (let i = matches.length - 1; i >= 0; i--) {
-        const m = matches[i]
+        const m = matches[i];
+        console.log({regex: pattern.regex, name: pattern.name, description: pattern.description})
         wrapMatch(
           node,
           m.index!,
           m.index! + m[0].length,
           "hl-sentence",
           SENTENCE_STYLE,
-          name
+          pattern.name,
+          pattern.description
         )
       }
     }
   }
-
   // Pass 2: Word-level TARGETS match (skip already highlighted spans)
   const walker2 = document.createTreeWalker(
     document.body,

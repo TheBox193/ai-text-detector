@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
-    "package": "plasmo package"
+    "package": "plasmo package",
+    "test": "vitest"
   },
   "dependencies": {
     "plasmo": "0.90.5",
@@ -21,6 +22,7 @@
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
     "prettier": "3.2.4",
+    "vitest": "^3.2.4",
     "typescript": "5.3.3"
   },
   "manifest": {

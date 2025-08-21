@@ -12,7 +12,7 @@ function IndexPopup() {
         AI sentence & Word detection
       </h1>
       <p>Currently nothing cool to share here.</p>
-      <p>Think there should be some? Join us on GitHub!</p>
+      <p>Think there should be some? <a href="https://github.com/TheBox193/ai-text-detector">Join us on GitHub</a>!</p>
       <footer>Crafted by @TheBox193</footer>
     </div>
   )
