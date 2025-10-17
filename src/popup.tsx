@@ -171,6 +171,14 @@ function IndexPopup() {
       ? tab.hostname
       : null
 
+  const openSettings = () => {
+    if (typeof chrome.runtime.openOptionsPage === "function") {
+      chrome.runtime.openOptionsPage()
+    } else {
+      chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
+    }
+  }
+
   return (
     <div className="popup-root">
       <header className="popup-header">
@@ -238,6 +246,21 @@ function IndexPopup() {
             Resume now
           </button>
         )}
+      </section>
+
+      <section className="card settings-card">
+        <div className="card-header">
+          <div>
+            <h2>Styling</h2>
+            <p className="muted">
+              Choose colors, intensity, or underline mode from the settings
+              page.
+            </p>
+          </div>
+          <button className="secondary-button" onClick={openSettings}>
+            Settings
+          </button>
+        </div>
       </section>
 
       <footer className="popup-footer">

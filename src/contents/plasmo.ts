@@ -1,6 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
 import {
+  computeHighlightFragments,
   fetchHighlightSettings,
   isHighlightEnabledForSite,
   STORAGE_HIGHLIGHT_SETTINGS_KEY
@@ -15,10 +16,6 @@ export const config: PlasmoCSConfig = {
   matches: ["https://*/*"],
   run_at: "document_idle"
 }
-
-const STYLE = "background:#ff1493;color:#fff;padding:0 2px;border-radius:5px;"
-const SENTENCE_STYLE =
-  "background:#f9c74f;color:#FFF;padding:0 2px;border-radius:5px;"
 
 /* build one regex (longest first to avoid "..."/".") -------------------- */
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -41,7 +38,7 @@ const createWalker = () =>
         : NodeFilter.FILTER_ACCEPT
   })
 
-const runSentenceHighlight = () => {
+const runSentenceHighlight = (style: string) => {
   for (const pattern of SENTENCE_TARGETS) {
     const walker = createWalker()
     const nodes: Text[] = []
@@ -59,7 +56,7 @@ const runSentenceHighlight = () => {
           match.index!,
           match.index! + match[0].length,
           "hl-sentence",
-          SENTENCE_STYLE,
+          style,
           pattern.name,
           pattern.description
         )
@@ -68,7 +65,7 @@ const runSentenceHighlight = () => {
   }
 }
 
-const runWordHighlight = () => {
+const runWordHighlight = (style: string) => {
   const walker = createWalker()
   const nodes: Text[] = []
   for (let n; (n = walker.nextNode()); ) nodes.push(n as Text)
@@ -77,7 +74,7 @@ const runWordHighlight = () => {
     const html = node.nodeValue.replace(
       RX,
       (match) =>
-        `<span class="hl-char" style="${STYLE}">${match}</span>`
+        `<span class="hl-char" style="${style}">${match}</span>`
     )
     if (html !== node.nodeValue) {
       const wrapper = document.createElement("span")
@@ -123,9 +120,11 @@ const sendMatchCount = (count: number) => {
   chrome.runtime.sendMessage({ type: "MATCH_COUNT", count })
 }
 
-const highlightDocument = (): number => {
-  runSentenceHighlight()
-  runWordHighlight()
+const highlightDocument = (
+  styles: ReturnType<typeof computeHighlightFragments>
+): number => {
+  runSentenceHighlight(styles.sentence)
+  runWordHighlight(styles.word)
   return document.querySelectorAll(HIGHLIGHT_SELECTOR).length
 }
 
@@ -133,6 +132,7 @@ const refreshHighlight = async () => {
   if (!document?.body) return
 
   const settings = await fetchHighlightSettings()
+  const styles = computeHighlightFragments(settings.style)
   const allowed = isHighlightEnabledForSite(
     settings,
     window.location.hostname
@@ -145,7 +145,7 @@ const refreshHighlight = async () => {
   }
 
   clearHighlights()
-  const count = highlightDocument()
+  const count = highlightDocument(styles)
   sendMatchCount(count)
 }
 

@@ -1,13 +1,13 @@
 .popup-root {
-  width: 360px;
-  padding: 20px;
-  background: linear-gradient(135deg, #0f172a, #1f2937);
+  width: 340px;
+  padding: 18px;
+  background: #0f172a;
   color: #f8fafc;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .popup-header h1 {
@@ -22,14 +22,13 @@
 }
 
 .card {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 14px;
-  padding: 16px;
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .card h2 {
@@ -72,8 +71,8 @@
   position: relative;
   width: 46px;
   height: 26px;
-  background-color: rgba(148, 163, 184, 0.4);
-  border-radius: 40px;
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 18px;
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -89,21 +88,22 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fff;
+  background: #f8fafc;
   transition:
     transform 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    box-shadow 0.2s ease;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.45);
 }
 
 .toggle input:checked + .slider {
-  background: linear-gradient(135deg, #ff5f9c, #f97316);
-  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.35);
+  background: linear-gradient(135deg, #22d3ee, #38bdf8);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
 }
 
 .toggle input:checked + .slider::after {
   transform: translateX(20px);
-  background: #111827;
+  background: #0f172a;
 }
 
 .toggle input:disabled + .slider {
@@ -159,6 +159,31 @@
 .link-button:disabled {
   opacity: 0.5;
   cursor: wait;
+}
+
+.secondary-button {
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border 0.15s ease,
+    background 0.15s ease;
+}
+
+.secondary-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 234, 212, 0.6);
+  background: rgba(94, 234, 212, 0.2);
+}
+
+.settings-card .card-header {
+  align-items: flex-start;
 }
 
 .status {
