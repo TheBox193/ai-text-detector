@@ -1,5 +1,10 @@
 import type { PlasmoCSConfig } from "plasmo"
 
+import {
+  fetchHighlightSettings,
+  isHighlightEnabledForSite,
+  STORAGE_HIGHLIGHT_SETTINGS_KEY
+} from "~utils/highlightSettings"
 import wrapMatch from "~utils/wrapMatch"
 
 import SENTENCE_TARGETS from "../targets/sentenceTargets"
@@ -25,48 +30,34 @@ const RX = new RegExp(
   "gi"
 )
 
-window.addEventListener("load", () => {
-  console.log("hello")
+const HIGHLIGHT_SELECTOR = ".hl-char, .hl-sentence"
+const HIGHLIGHT_WRAPPER_ATTR = "data-highlight-wrapper"
 
-  const walker1 = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (n) =>
-        shouldSkipNode(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-    }
-  )
+const createWalker = () =>
+  document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      shouldSkipNode(n)
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT
+  })
 
-  const nodes1: Text[] = []
-  for (let n; (n = walker1.nextNode()); ) nodes1.push(n as Text)
-
-  // Pass 1: Sentence-level regex matches
-    for (const pattern of SENTENCE_TARGETS) {
-    // Get fresh nodes for each pattern
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: (n) =>
-          shouldSkipNode(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-      }
-    )
-
-    const nodes = []
+const runSentenceHighlight = () => {
+  for (const pattern of SENTENCE_TARGETS) {
+    const walker = createWalker()
+    const nodes: Text[] = []
     for (let n; (n = walker.nextNode()); ) nodes.push(n as Text)
 
     for (const node of nodes) {
       const original = node.nodeValue
       const matches = [...original.matchAll(pattern.regex)]
       if (matches.length === 0) continue
-      
+
       for (let i = matches.length - 1; i >= 0; i--) {
-        const m = matches[i];
-        console.log({regex: pattern.regex, name: pattern.name, description: pattern.description})
+        const match = matches[i]
         wrapMatch(
           node,
-          m.index!,
-          m.index! + m[0].length,
+          match.index!,
+          match.index! + match[0].length,
           "hl-sentence",
           SENTENCE_STYLE,
           pattern.name,
@@ -75,37 +66,117 @@ window.addEventListener("load", () => {
       }
     }
   }
-  // Pass 2: Word-level TARGETS match (skip already highlighted spans)
-  const walker2 = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (n) =>
-        shouldSkipNode(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-    }
-  )
+}
 
-  const nodes2: Text[] = []
-  for (let n; (n = walker2.nextNode()); ) nodes2.push(n as Text)
+const runWordHighlight = () => {
+  const walker = createWalker()
+  const nodes: Text[] = []
+  for (let n; (n = walker.nextNode()); ) nodes.push(n as Text)
 
-  for (const node of nodes2) {
-    const html = node.nodeValue.replace(RX, (m) => {
-      return `<span class="hl-char" style="${STYLE}">${m}</span>`
-    })
+  for (const node of nodes) {
+    const html = node.nodeValue.replace(
+      RX,
+      (match) =>
+        `<span class="hl-char" style="${STYLE}">${match}</span>`
+    )
     if (html !== node.nodeValue) {
       const wrapper = document.createElement("span")
       wrapper.innerHTML = html
+      wrapper.setAttribute(HIGHLIGHT_WRAPPER_ATTR, "true")
       node.parentNode?.replaceChild(wrapper, node)
     }
   }
+}
 
-  const matchCount = document.querySelectorAll(".hl-char, .hl-sentence").length
+const unwrapElement = (element: HTMLElement) => {
+  const parent = element.parentNode
+  if (!parent) return
 
-  chrome.runtime.sendMessage({ type: "MATCH_COUNT", count: matchCount })
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "GET_MATCH_COUNT") {
-      const count = document.querySelectorAll(".hl-char, .hl-sentence").length
-      chrome.runtime.sendMessage({ type: "MATCH_COUNT", count })
-    }
+  if (element.childNodes.length === 0) {
+    parent.replaceChild(
+      document.createTextNode(element.textContent ?? ""),
+      element
+    )
+    ;(parent as ParentNode).normalize()
+    return
+  }
+
+  while (element.firstChild) {
+    parent.insertBefore(element.firstChild, element)
+  }
+
+  parent.removeChild(element)
+  ;(parent as ParentNode).normalize()
+}
+
+const clearHighlights = () => {
+  document
+    .querySelectorAll<HTMLElement>(HIGHLIGHT_SELECTOR)
+    .forEach((el) => unwrapElement(el))
+
+  document
+    .querySelectorAll<HTMLElement>(`[${HIGHLIGHT_WRAPPER_ATTR}]`)
+    .forEach((wrapper) => unwrapElement(wrapper))
+}
+
+const sendMatchCount = (count: number) => {
+  chrome.runtime.sendMessage({ type: "MATCH_COUNT", count })
+}
+
+const highlightDocument = (): number => {
+  runSentenceHighlight()
+  runWordHighlight()
+  return document.querySelectorAll(HIGHLIGHT_SELECTOR).length
+}
+
+const refreshHighlight = async () => {
+  if (!document?.body) return
+
+  const settings = await fetchHighlightSettings()
+  const allowed = isHighlightEnabledForSite(
+    settings,
+    window.location.hostname
+  )
+
+  if (!allowed) {
+    clearHighlights()
+    sendMatchCount(0)
+    return
+  }
+
+  clearHighlights()
+  const count = highlightDocument()
+  sendMatchCount(count)
+}
+
+const handleMatchCountRequest = () => {
+  const count = document.querySelectorAll(HIGHLIGHT_SELECTOR).length
+  sendMatchCount(count)
+}
+
+const isDomReady =
+  document.readyState === "complete" || document.readyState === "interactive"
+
+if (isDomReady) {
+  refreshHighlight()
+} else {
+  window.addEventListener("load", () => {
+    refreshHighlight()
   })
+}
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === "GET_MATCH_COUNT") {
+    handleMatchCountRequest()
+  }
+  if (message.type === "REFRESH_HIGHLIGHT_STATE") {
+    refreshHighlight()
+  }
+})
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return
+  if (changes[STORAGE_HIGHLIGHT_SETTINGS_KEY]) {
+    refreshHighlight()
+  }
 })
