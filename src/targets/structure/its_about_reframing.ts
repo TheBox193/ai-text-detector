@@ -1,7 +1,7 @@
 const its_about_reframing = {
   name: "its_about_reframing",
   description: `AI explanatory reframing: "It's really about/not about X"`,
-  regex: /\b(?:it['']?s|this is|it isn['']?t) (?:not )?(?:really |actually |ultimately |truly )?(?:not )?(?:about|concerning|regarding)\b/gi,
+  regex: /\b(?:it['’]?s|this is|it isn['’]?t) (?:not )?(?:really |actually |ultimately |truly )?(?:not )?(?:about|concerning|regarding)\b/gi,
   severity: "med" as const,
   tags: ["reframing", "explanation", "AI_pattern"],
   examples: [

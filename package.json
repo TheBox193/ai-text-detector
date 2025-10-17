@@ -8,6 +8,9 @@
     "dev": "plasmo dev",
     "build": "plasmo build",
     "package": "plasmo package",
+    "itemize": "tsc --project tsconfig.log.json && node .tmp/index.js",
+    "log-object": "yarn clean-log && tsc --project tsconfig.log.json && node .log-tmp/src/targets/structure/log.js",
+    "clean-log": "rm -rf .log-tmp",
     "test": "vitest"
   },
   "dependencies": {

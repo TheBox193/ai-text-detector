@@ -70,6 +70,7 @@ const WORD_TARGETS = [
   "As we've seen",
   "In this article",
   "Let's dive in",
+  "unique blend of",
 
   /* Expository scaffolding */
   "The following",
@@ -218,6 +219,7 @@ const WORD_TARGETS = [
   "but not this",
   "transform how",
   "do more than",
+  "More than anything",
   "Three",
   "the fewer",
   "Break Down Why",
