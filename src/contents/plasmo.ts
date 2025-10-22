@@ -17,6 +17,12 @@ export const config: PlasmoCSConfig = {
   run_at: "document_idle"
 }
 
+declare global {
+  interface Window {
+    __aiDetectorTooltipInit?: boolean
+  }
+}
+
 /* build one regex (longest first to avoid "..."/".") -------------------- */
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
@@ -29,6 +35,202 @@ const RX = new RegExp(
 
 const HIGHLIGHT_SELECTOR = ".hl-char, .hl-sentence"
 const HIGHLIGHT_WRAPPER_ATTR = "data-highlight-wrapper"
+
+const TOOLTIP_ID = "__ai-detector-tooltip"
+const TOOLTIP_MAX_WIDTH = 320
+const TOOLTIP_MARGIN = 10
+
+let tooltipElement: HTMLDivElement | null = null
+let tooltipTarget: HTMLElement | null = null
+
+const tooltipSeverityTokens: Record<
+  string,
+  { background: string; color: string; border: string }
+> = {
+  low: {
+    background: "#dcfce7",
+    color: "#166534",
+    border: "#16a34a"
+  },
+  medium: {
+    background: "#fef3c7",
+    color: "#92400e",
+    border: "#f59e0b"
+  },
+  high: {
+    background: "#fee2e2",
+    color: "#b91c1c",
+    border: "#ef4444"
+  },
+  default: {
+    background: "#e2e8f0",
+    color: "#1f2937",
+    border: "#94a3b8"
+  }
+}
+
+const ensureTooltipElement = (): HTMLDivElement | null => {
+  if (tooltipElement) return tooltipElement
+  const container = document.body ?? document.documentElement
+  if (!container) return null
+
+  const el = document.createElement("div")
+  el.id = TOOLTIP_ID
+  el.style.position = "fixed"
+  el.style.zIndex = "2147483646"
+  el.style.pointerEvents = "none"
+  el.style.background = "rgba(15, 23, 42, 0.94)"
+  el.style.color = "#f8fafc"
+  el.style.padding = "10px 12px"
+  el.style.borderRadius = "8px"
+  el.style.boxShadow = "0 12px 32px rgba(15, 23, 42, 0.28)"
+  el.style.fontFamily =
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+  el.style.fontSize = "13px"
+  el.style.lineHeight = "1.55"
+  el.style.maxWidth = `${TOOLTIP_MAX_WIDTH}px`
+  el.style.opacity = "0"
+  el.style.visibility = "hidden"
+  el.style.display = "block"
+  el.style.transform = "translateY(4px)"
+  el.style.transition = "opacity 120ms ease-out, transform 120ms ease-out"
+  container.appendChild(el)
+  tooltipElement = el
+  return tooltipElement
+}
+
+const renderTooltipContent = (target: HTMLElement): HTMLDivElement | null => {
+  const description = target.dataset.desc
+  const severity = target.dataset.severity
+  const severityLabel = target.dataset.severityLabel
+  if (!description && !severityLabel) {
+    return null
+  }
+
+  const el = ensureTooltipElement()
+  if (!el) return null
+
+  el.textContent = ""
+
+  if (severityLabel) {
+    const badge = document.createElement("div")
+    const token =
+      tooltipSeverityTokens[severity ?? ""] ?? tooltipSeverityTokens.default
+    badge.textContent = severityLabel
+    badge.style.display = "inline-flex"
+    badge.style.alignItems = "center"
+    badge.style.justifyContent = "center"
+    badge.style.fontSize = "10px"
+    badge.style.fontWeight = "600"
+    badge.style.letterSpacing = "0.06em"
+    badge.style.textTransform = "uppercase"
+    badge.style.padding = "2px 8px"
+    badge.style.borderRadius = "999px"
+    badge.style.background = token.background
+    badge.style.color = token.color
+    badge.style.border = `1px solid ${token.border}`
+    badge.style.marginBottom = description ? "6px" : "0"
+    el.appendChild(badge)
+  }
+
+  if (description) {
+    const text = document.createElement("div")
+    text.textContent = description
+    text.style.whiteSpace = "normal"
+    text.style.wordBreak = "break-word"
+    text.style.fontSize = "13px"
+    text.style.color = "#f1f5f9"
+    el.appendChild(text)
+  }
+
+  return el
+}
+
+const positionTooltip = (target: HTMLElement, tooltip: HTMLDivElement) => {
+  const rect = target.getBoundingClientRect()
+  const { offsetWidth, offsetHeight } = tooltip
+
+  let top = rect.bottom + TOOLTIP_MARGIN
+  if (top + offsetHeight > window.innerHeight - 8) {
+    top = rect.top - offsetHeight - TOOLTIP_MARGIN
+  }
+
+  let left = rect.left + rect.width / 2 - offsetWidth / 2
+  const minLeft = 8
+  const maxLeft = window.innerWidth - offsetWidth - 8
+  left = Math.max(minLeft, Math.min(left, maxLeft))
+
+  tooltip.style.top = `${Math.round(top)}px`
+  tooltip.style.left = `${Math.round(left)}px`
+}
+
+const hideTooltip = () => {
+  if (!tooltipElement) return
+  tooltipElement.style.opacity = "0"
+  tooltipElement.style.transform = "translateY(4px)"
+  tooltipElement.style.visibility = "hidden"
+  tooltipTarget = null
+}
+
+const showTooltipForTarget = (target: HTMLElement) => {
+  if (tooltipTarget === target) return
+  const tooltip = renderTooltipContent(target)
+  if (!tooltip) {
+    hideTooltip()
+    return
+  }
+
+  tooltip.style.opacity = "0"
+  tooltip.style.visibility = "hidden"
+  tooltip.style.transform = "translateY(4px)"
+
+  positionTooltip(target, tooltip)
+
+  tooltip.style.visibility = "visible"
+  tooltip.style.opacity = "1"
+  tooltip.style.transform = "translateY(0)"
+  tooltipTarget = target
+}
+
+const handleTooltipMouseOver = (event: MouseEvent) => {
+  const target = (event.target as HTMLElement | null)?.closest(
+    ".hl-sentence"
+  ) as HTMLElement | null
+  if (!target) return
+  showTooltipForTarget(target)
+}
+
+const handleTooltipMouseOut = (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null
+  if (!target?.matches(".hl-sentence")) return
+  const next = event.relatedTarget as HTMLElement | null
+  if (next && next.closest(".hl-sentence") === target) return
+  hideTooltip()
+}
+
+const handleTooltipScroll = () => {
+  if (!tooltipTarget) return
+  hideTooltip()
+}
+
+const handleTooltipKeyDown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    hideTooltip()
+  }
+}
+
+const initTooltipInteraction = () => {
+  if (window.__aiDetectorTooltipInit) return
+  window.__aiDetectorTooltipInit = true
+
+  document.addEventListener("mouseover", handleTooltipMouseOver)
+  document.addEventListener("mouseout", handleTooltipMouseOut)
+  document.addEventListener("click", hideTooltip, true)
+  window.addEventListener("scroll", handleTooltipScroll, true)
+  window.addEventListener("keydown", handleTooltipKeyDown, true)
+}
+
+initTooltipInteraction()
 
 const createWalker = () =>
   document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
@@ -58,7 +260,8 @@ const runSentenceHighlight = (style: string) => {
           "hl-sentence",
           style,
           pattern.name,
-          pattern.description
+          pattern.description,
+          pattern.severity
         )
       }
     }
@@ -107,6 +310,7 @@ const unwrapElement = (element: HTMLElement) => {
 }
 
 const clearHighlights = () => {
+  hideTooltip()
   document
     .querySelectorAll<HTMLElement>(HIGHLIGHT_SELECTOR)
     .forEach((el) => unwrapElement(el))
