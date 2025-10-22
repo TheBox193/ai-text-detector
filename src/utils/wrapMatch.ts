@@ -26,7 +26,8 @@ function wrapMatch(
   style: string,
   rule?: string,
   tooltip?: string,
-  severity?: string
+  severity?: string,
+  example?: string
 ) {
   const text = node.nodeValue
   const before = document.createTextNode(text.slice(0, start))
@@ -39,6 +40,9 @@ function wrapMatch(
   const severityDetails = normalizeSeverity(severity)
   if (tooltip) {
     match.dataset.desc = tooltip
+  }
+  if (example) {
+    match.dataset.example = example
   }
   if (severityDetails) {
     match.dataset.severity = severityDetails.value

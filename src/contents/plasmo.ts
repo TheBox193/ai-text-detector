@@ -103,7 +103,8 @@ const renderTooltipContent = (target: HTMLElement): HTMLDivElement | null => {
   const description = target.dataset.desc
   const severity = target.dataset.severity
   const severityLabel = target.dataset.severityLabel
-  if (!description && !severityLabel) {
+  const example = target.dataset.example
+  if (!description && !severityLabel && !example) {
     return null
   }
 
@@ -138,9 +139,37 @@ const renderTooltipContent = (target: HTMLElement): HTMLDivElement | null => {
     text.textContent = description
     text.style.whiteSpace = "normal"
     text.style.wordBreak = "break-word"
-    text.style.fontSize = "13px"
+    text.style.fontSize = "14px"
+    text.style.fontWeight = "500"
     text.style.color = "#f1f5f9"
+    text.style.marginBottom = example ? "8px" : "0"
     el.appendChild(text)
+  }
+
+  if (example) {
+    const sampleWrap = document.createElement("div")
+    sampleWrap.style.background = "rgba(15, 23, 42, 0.55)"
+    sampleWrap.style.border = "1px solid rgba(148, 163, 184, 0.4)"
+    sampleWrap.style.borderRadius = "6px"
+    sampleWrap.style.padding = "8px 10px"
+    sampleWrap.style.fontSize = "13px"
+    sampleWrap.style.lineHeight = "1.5"
+    sampleWrap.style.color = "#e2e8f0"
+
+    const sampleLabel = document.createElement("div")
+    sampleLabel.textContent = "Example"
+    sampleLabel.style.fontSize = "11px"
+    sampleLabel.style.letterSpacing = "0.08em"
+    sampleLabel.style.textTransform = "uppercase"
+    sampleLabel.style.color = "#94a3b8"
+    sampleLabel.style.marginBottom = "4px"
+
+    const sampleText = document.createElement("div")
+    sampleText.textContent = example
+
+    sampleWrap.appendChild(sampleLabel)
+    sampleWrap.appendChild(sampleText)
+    el.appendChild(sampleWrap)
   }
 
   return el
@@ -261,7 +290,8 @@ const runSentenceHighlight = (style: string) => {
           style,
           pattern.name,
           pattern.description,
-          pattern.severity
+          pattern.severity,
+          pattern.examples?.[0]
         )
       }
     }
