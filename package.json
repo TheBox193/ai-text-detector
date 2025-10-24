@@ -1,7 +1,7 @@
 {
   "name": "ai-text-detector",
   "displayName": "AI Text Detector",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Detect and highlight any text that looks AI-generated!",
   "author": "jStassen.com",
   "scripts": {
