@@ -6,7 +6,7 @@
   "author": "jStassen.com",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build && plasmo build --target=firefox-mv2",
+    "build": "plasmo build --zip && plasmo build --target=firefox-mv2 --zip --no-minify",
     "package": "plasmo package",
     "itemize": "tsc --project tsconfig.log.json && node .tmp/index.js",
     "log-object": "yarn clean-log && tsc --project tsconfig.log.json && node .log-tmp/src/targets/structure/log.js",
