@@ -263,6 +263,22 @@ function IndexPopup() {
         </div>
       </section>
 
+      <section className="card support-card">
+        <h2>Support the Project</h2>
+        <p className="muted">
+          If the detector helps you spot AI writing faster, fuel the work with
+          a coffee.
+        </p>
+        <a
+          className="support-link"
+          href="https://paypal.me/jstassen"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Buy me a coffee
+        </a>
+      </section>
+
       <footer className="popup-footer">
         Crafted by @TheBox193 · Stay curious!
       </footer>

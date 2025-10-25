@@ -329,6 +329,41 @@
   color: #475569;
 }
 
+.support-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #22d3ee);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.support-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(34, 211, 238, 0.28);
+}
+
+.support-link:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.8);
+  outline-offset: 3px;
+}
+
 .options-footer {
   margin-top: 36px;
   text-align: center;

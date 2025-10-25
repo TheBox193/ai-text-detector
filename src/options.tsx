@@ -392,6 +392,24 @@ const IndexOptions = () => {
         </div>
       </section>
 
+      <section className="options-card support-card">
+        <div className="card-title">
+          <h2>Support the Project</h2>
+          <p className="muted">
+            If these highlights help you out, consider fueling the work with a
+            quick coffee.
+          </p>
+        </div>
+        <a
+          className="support-link"
+          href="https://paypal.me/jstassen"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Buy me a coffee
+        </a>
+      </section>
+
       <footer className="options-footer">
         <p>Crafted by @TheBox193.</p>
       </footer>

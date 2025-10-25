@@ -186,6 +186,37 @@
   align-items: flex-start;
 }
 
+.support-card {
+  align-items: flex-start;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(99, 102, 241, 0.9));
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: 0 8px 16px rgba(56, 189, 248, 0.25);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.support-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(99, 102, 241, 0.35);
+}
+
+.support-link:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.9);
+  outline-offset: 3px;
+}
+
 .status {
   font-size: 12px;
   font-weight: 600;
