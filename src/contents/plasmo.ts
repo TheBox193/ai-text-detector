@@ -76,6 +76,14 @@ const CORE_CONTENT_SELECTORS = [
   ".content"
 ]
 
+const SEVERITY_INTENSITY_POINTS: Record<SeverityLevel, number> = {
+  low: 0.65,
+  medium: 1.35,
+  high: 2.4
+}
+
+const WORD_INTENSITY_POINTS = 0.35
+
 const normalizeWhitespace = (value: string): string =>
   value.replace(/\s+/g, " ").trim()
 
@@ -187,6 +195,15 @@ const computeDetectionStats = (): DetectionStats => {
       rawCoverage: 0,
       weightedCoverage: 0,
       scorePercent: 0,
+      weightedCoveragePercent: 0,
+      rawCoveragePercent: 0,
+      detectionPoints: 0,
+      pointsPer100Words: 0,
+      highSeverityDensity: 0,
+      uniqueDensity: 0,
+      detectionIntensity: 0,
+      confidence: 0,
+      confidencePercent: 0,
       highlightCount,
       uniqueDetections: 0,
       severityBreakdown,
@@ -200,6 +217,7 @@ const computeDetectionStats = (): DetectionStats => {
   let flaggedCharacters = 0
   let weightedSum = 0
   let uniqueDetections = 0
+  let detectionPoints = 0
 
   const sentenceMatches = Array.from(
     coreRoot.querySelectorAll<HTMLElement>(".hl-sentence")
@@ -211,6 +229,9 @@ const computeDetectionStats = (): DetectionStats => {
     const words = Math.max(countWordsFromNormalized(text), 1)
     const severityLevel = normalizeSeverityValue(element.dataset.severity)
     const weight = getSeverityWeight(severityLevel ?? undefined, "sentence")
+    const appliedSeverity: SeverityLevel =
+      severityLevel ?? "medium"
+    detectionPoints += SEVERITY_INTENSITY_POINTS[appliedSeverity]
 
     if (severityLevel) {
       severityBreakdown[severityLevel] += 1
@@ -238,6 +259,7 @@ const computeDetectionStats = (): DetectionStats => {
     const severityValue =
       normalizeSeverityValue(element.dataset.severity) ?? WORD_MATCH_SEVERITY
     const weight = getSeverityWeight(severityValue, "word")
+    detectionPoints += WORD_INTENSITY_POINTS
 
     severityBreakdown[severityValue] += 1
     typeBreakdown.word += 1
@@ -251,7 +273,30 @@ const computeDetectionStats = (): DetectionStats => {
     totalWords > 0 ? Math.min(flaggedWords / totalWords, 1) : 0
   const weightedCoverage =
     totalWords > 0 ? Math.min(weightedSum / totalWords, 1) : 0
-  const scorePercent = Math.round(weightedCoverage * 1000) / 10
+  const weightedCoveragePercent = Math.round(weightedCoverage * 1000) / 10
+  const rawCoveragePercent = Math.round(rawCoverage * 1000) / 10
+
+  const wordsPerHundred = totalWords > 0 ? totalWords / 100 : 1
+  const pointsPer100Words = detectionPoints / wordsPerHundred
+  const highSeverityDensity =
+    totalWords > 0
+      ? severityBreakdown.high / Math.max(1, totalWords / 180)
+      : severityBreakdown.high
+  const uniqueDensity =
+    totalWords > 0
+      ? uniqueDetections / Math.max(1, totalWords / 120)
+      : uniqueDetections
+
+  const detectionIntensity =
+    weightedCoverage * 6 +
+    pointsPer100Words * 0.28 +
+    highSeverityDensity * 0.72 +
+    uniqueDensity * 0.18
+  const confidence = Math.max(
+    0,
+    Math.min(1, 1 - Math.exp(-0.85 * Math.max(detectionIntensity, 0)))
+  )
+  const confidencePercent = Math.round(confidence * 1000) / 10
 
   return {
     totalWords,
@@ -260,7 +305,16 @@ const computeDetectionStats = (): DetectionStats => {
     flaggedCharacters,
     rawCoverage,
     weightedCoverage,
-    scorePercent,
+    scorePercent: weightedCoveragePercent,
+    weightedCoveragePercent,
+    rawCoveragePercent,
+    detectionPoints,
+    pointsPer100Words,
+    highSeverityDensity,
+    uniqueDensity,
+    detectionIntensity,
+    confidence,
+    confidencePercent,
     highlightCount,
     uniqueDetections,
     severityBreakdown,

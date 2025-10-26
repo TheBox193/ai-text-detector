@@ -14,4 +14,13 @@ export type DetectionStats = {
   severityBreakdown: Record<SeverityLevel | "unknown", number>
   typeBreakdown: Record<DetectionType, number>
   coreNodeTag: string
+  weightedCoveragePercent: number
+  rawCoveragePercent: number
+  detectionPoints: number
+  pointsPer100Words: number
+  highSeverityDensity: number
+  uniqueDensity: number
+  detectionIntensity: number
+  confidence: number
+  confidencePercent: number
 }

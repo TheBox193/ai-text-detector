@@ -10,18 +10,20 @@ type TabStatsEntry = {
 const tabStats = new Map<number, TabStatsEntry>()
 
 const formatBadgeText = (stats: DetectionStats): string => {
-  if (stats.highlightCount === 0 || stats.scorePercent <= 0) {
+  if (stats.highlightCount === 0 || stats.confidencePercent <= 0) {
     return ""
   }
 
-  const rounded = Math.round(stats.scorePercent)
+  const rounded = Math.round(stats.confidencePercent)
   if (rounded >= 100) return "100"
   return `${rounded}%`
 }
 
 const pickBadgeColor = (stats: DetectionStats): string => {
-  if (stats.scorePercent >= 60) return "#dc2626"
-  if (stats.scorePercent >= 35) return "#f97316"
+  const confidence = stats.confidencePercent
+  if (confidence >= 75) return "#dc2626"
+  if (confidence >= 45) return "#f97316"
+  if (confidence >= 20) return "#facc15"
   return "#0ea5e9"
 }
 
@@ -30,7 +32,11 @@ const clearBadge = (tabId: number) => {
 }
 
 const applyBadge = (tabId: number, stats: DetectionStats | null) => {
-  if (!stats || stats.highlightCount === 0 || stats.scorePercent <= 0) {
+  if (
+    !stats ||
+    stats.highlightCount === 0 ||
+    stats.confidencePercent <= 0
+  ) {
     clearBadge(tabId)
     return
   }

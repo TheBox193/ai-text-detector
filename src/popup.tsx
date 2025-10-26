@@ -249,8 +249,17 @@ function IndexPopup() {
     stats?.coreNodeTag && stats.coreNodeTag !== "none"
       ? `${stats.coreNodeTag} section`
       : "page body"
-  const scoreDisplay = `${formatScoreValue(stats?.scorePercent)}%`
+  const confidenceDisplay = `${formatScoreValue(stats?.confidencePercent)}%`
+  const weightedCoverageDisplay = formatRatioPercent(
+    stats?.weightedCoverage
+  )
   const rawCoverageDisplay = formatRatioPercent(stats?.rawCoverage)
+  const pointsPer100WordsDisplay = stats
+    ? `${formatScoreValue(stats.pointsPer100Words)} pts/100w`
+    : ""
+  const showIntensityChip = Boolean(
+    stats && stats.pointsPer100Words > 0.25
+  )
   const detectionStatus =
     stats && highlightCount > 0
       ? `${highlightCount} indicator${highlightCount === 1 ? "" : "s"} highlighted`
@@ -258,7 +267,7 @@ function IndexPopup() {
         ? "No indicators detected"
         : "Waiting for page data"
   const scoreSubtext = stats
-    ? `Focus: ${scopeLabel} · ${detectionStatus}`
+    ? `${detectionStatus}. Focus on ${scopeLabel}. Coverage ${weightedCoverageDisplay} (raw ${rawCoverageDisplay}).`
     : "Open a webpage to measure AI indicators in the main content."
 
   const openSettings = () => {
@@ -279,12 +288,12 @@ function IndexPopup() {
       <section className="card score-card">
         <div className="score-header">
           <div>
-            <h2>AI Coverage</h2>
+            <h2>AI Confidence</h2>
             <p className="muted">
-              Weighted share of main content flagged for AI patterns.
+              Estimated likelihood this page leans on AI-generated writing.
             </p>
           </div>
-          <div className="score-value">{scoreDisplay}</div>
+          <div className="score-value">{confidenceDisplay}</div>
         </div>
         <p className="score-subtext">{scoreSubtext}</p>
         {stats ? (
@@ -310,14 +319,20 @@ function IndexPopup() {
                 </span>
               </div>
               <div className="metric-card metric-span">
-                <span className="metric-label">Raw coverage</span>
-                <span className="metric-value">{rawCoverageDisplay}</span>
+                <span className="metric-label">Coverage</span>
+                <span className="metric-value">{weightedCoverageDisplay}</span>
                 <span className="metric-sub">
-                  Unweighted share of core text
+                  Weighted match share · raw {rawCoverageDisplay}
                 </span>
               </div>
             </div>
             <div className="severity-chips">
+              {showIntensityChip ? (
+                <span className="severity-chip intensity-chip">
+                  <span className="severity-dot" />
+                  {pointsPer100WordsDisplay}
+                </span>
+              ) : null}
               {SEVERITY_ORDER.map(({ key, label }) => {
                 const count = stats.severityBreakdown[key] ?? 0
                 if (count === 0) return null

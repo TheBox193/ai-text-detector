@@ -58,6 +58,7 @@
   margin: 0;
   font-size: 11px;
   color: #94a3b8;
+  line-height: 1.45;
 }
 
 .metric-grid {
@@ -143,6 +144,11 @@
 .severity-unknown {
   background: rgba(148, 163, 184, 0.22);
   color: #cbd5f5;
+}
+
+.intensity-chip {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
 }
 
 .score-placeholder {
