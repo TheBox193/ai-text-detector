@@ -10,6 +10,7 @@ import {
   setGlobalPauseMinutes,
   setSiteHighlightState
 } from "~utils/highlightSettings"
+import type { DetectionStats } from "~types/detectionStats"
 
 import "./popup.css"
 
@@ -19,6 +20,34 @@ type ActiveTab = {
 }
 
 const toggleMessage = { type: "REFRESH_HIGHLIGHT_STATE" }
+
+const formatNumber = (value?: number | null): string => {
+  if (value === undefined || value === null || Number.isNaN(value)) {
+    return "0"
+  }
+  return value.toLocaleString()
+}
+
+const formatScoreValue = (value?: number | null): string => {
+  if (value === undefined || value === null || !Number.isFinite(value)) {
+    return "--"
+  }
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1)
+}
+
+const formatRatioPercent = (ratio?: number | null, digits = 1): string => {
+  if (ratio === undefined || ratio === null || !Number.isFinite(ratio)) {
+    return "0%"
+  }
+  return `${(ratio * 100).toFixed(digits)}%`
+}
+
+const SEVERITY_ORDER = [
+  { key: "high", label: "High" },
+  { key: "medium", label: "Medium" },
+  { key: "low", label: "Low" }
+] as const
 
 const formatDuration = (ms: number): string => {
   const totalMinutes = Math.ceil(ms / 60_000)
@@ -32,6 +61,7 @@ const formatDuration = (ms: number): string => {
 function IndexPopup() {
   const [tab, setTab] = useState<ActiveTab | null>(null)
   const [settings, setSettings] = useState<HighlightSettings | null>(null)
+  const [stats, setStats] = useState<DetectionStats | null>(null)
   const [siteEnabled, setSiteEnabled] = useState(true)
   const [sitePending, setSitePending] = useState(false)
   const [globalPending, setGlobalPending] = useState(false)
@@ -81,6 +111,24 @@ function IndexPopup() {
   }, [tab?.hostname])
 
   useEffect(() => {
+    if (!tab?.id) {
+      setStats(null)
+      return
+    }
+
+    chrome.runtime.sendMessage(
+      { type: "REQUEST_PAGE_STATS", tabId: tab.id },
+      (response: { stats?: DetectionStats | null } | undefined) => {
+        if (chrome.runtime.lastError) {
+          setStats(null)
+          return
+        }
+        setStats(response?.stats ?? null)
+      }
+    )
+  }, [tab?.id])
+
+  useEffect(() => {
     const listener: Parameters<
       typeof chrome.storage.onChanged.addListener
     >[0] = (changes, area) => {
@@ -102,6 +150,26 @@ function IndexPopup() {
       chrome.storage.onChanged.removeListener(listener)
     }
   }, [tab?.hostname])
+
+  useEffect(() => {
+    const listener: Parameters<
+      typeof chrome.runtime.onMessage.addListener
+    >[0] = (message) => {
+      const payload = message as {
+        type?: string
+        stats?: DetectionStats
+      }
+
+      if (payload.type === "MATCH_STATS" && payload.stats) {
+        setStats(payload.stats)
+      }
+    }
+
+    chrome.runtime.onMessage.addListener(listener)
+    return () => {
+      chrome.runtime.onMessage.removeListener(listener)
+    }
+  }, [])
 
   const pauseRemainingMs = useMemo(
     () =>
@@ -171,6 +239,28 @@ function IndexPopup() {
       ? tab.hostname
       : null
 
+  const highlightCount = stats?.highlightCount ?? 0
+  const flaggedWords = stats?.flaggedWords ?? 0
+  const totalWords = stats?.totalWords ?? 0
+  const uniqueDetections = stats?.uniqueDetections ?? 0
+  const sentenceMatches = stats?.typeBreakdown.sentence ?? 0
+  const wordMatches = stats?.typeBreakdown.word ?? 0
+  const scopeLabel =
+    stats?.coreNodeTag && stats.coreNodeTag !== "none"
+      ? `${stats.coreNodeTag} section`
+      : "page body"
+  const scoreDisplay = `${formatScoreValue(stats?.scorePercent)}%`
+  const rawCoverageDisplay = formatRatioPercent(stats?.rawCoverage)
+  const detectionStatus =
+    stats && highlightCount > 0
+      ? `${highlightCount} indicator${highlightCount === 1 ? "" : "s"} highlighted`
+      : stats
+        ? "No indicators detected"
+        : "Waiting for page data"
+  const scoreSubtext = stats
+    ? `Focus: ${scopeLabel} · ${detectionStatus}`
+    : "Open a webpage to measure AI indicators in the main content."
+
   const openSettings = () => {
     if (typeof chrome.runtime.openOptionsPage === "function") {
       chrome.runtime.openOptionsPage()
@@ -185,6 +275,73 @@ function IndexPopup() {
         <h1>AI Text Detector</h1>
         <p>Control how highlights appear while you browse.</p>
       </header>
+
+      <section className="card score-card">
+        <div className="score-header">
+          <div>
+            <h2>AI Coverage</h2>
+            <p className="muted">
+              Weighted share of main content flagged for AI patterns.
+            </p>
+          </div>
+          <div className="score-value">{scoreDisplay}</div>
+        </div>
+        <p className="score-subtext">{scoreSubtext}</p>
+        {stats ? (
+          <>
+            <div className="metric-grid">
+              <div className="metric-card">
+                <span className="metric-label">Flagged words</span>
+                <span className="metric-value">
+                  {formatNumber(flaggedWords)}
+                </span>
+                <span className="metric-sub">
+                  of {formatNumber(totalWords)} total
+                </span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-label">Detections</span>
+                <span className="metric-value">
+                  {formatNumber(uniqueDetections)}
+                </span>
+                <span className="metric-sub">
+                  {formatNumber(sentenceMatches)} sentence ·{" "}
+                  {formatNumber(wordMatches)} word
+                </span>
+              </div>
+              <div className="metric-card metric-span">
+                <span className="metric-label">Raw coverage</span>
+                <span className="metric-value">{rawCoverageDisplay}</span>
+                <span className="metric-sub">
+                  Unweighted share of core text
+                </span>
+              </div>
+            </div>
+            <div className="severity-chips">
+              {SEVERITY_ORDER.map(({ key, label }) => {
+                const count = stats.severityBreakdown[key] ?? 0
+                if (count === 0) return null
+                return (
+                  <span key={key} className={`severity-chip severity-${key}`}>
+                    <span className="severity-dot" />
+                    {label} · {formatNumber(count)}
+                  </span>
+                )
+              })}
+              {stats.severityBreakdown.unknown > 0 && (
+                <span className="severity-chip severity-unknown">
+                  <span className="severity-dot" />
+                  Other · {formatNumber(stats.severityBreakdown.unknown)}
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="score-placeholder">
+            <span>Browse to a readable page to analyze AI indicators.</span>
+          </div>
+        )}
+      </section>
 
       <section className="card">
         <div className="card-header">

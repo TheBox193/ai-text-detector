@@ -1,13 +1,13 @@
 .popup-root {
-  width: 340px;
-  padding: 18px;
+  width: 320px;
+  padding: 16px;
   background: #0f172a;
   color: #f8fafc;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .popup-header h1 {
@@ -22,18 +22,137 @@
 }
 
 .card {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 10px;
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card h2 {
   margin: 0;
   font-size: 16px;
+}
+
+.score-card {
+  gap: 10px;
+}
+
+.score-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.score-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #facc15;
+  letter-spacing: -0.01em;
+}
+
+.score-subtext {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-span {
+  grid-column: span 2;
+}
+
+.metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.metric-sub {
+  font-size: 10px;
+  color: #a5b4fc;
+}
+
+.severity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.severity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+}
+
+.severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.severity-high {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+.severity-medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #facc15;
+}
+
+.severity-low {
+  background: rgba(52, 211, 153, 0.16);
+  color: #4ade80;
+}
+
+.severity-unknown {
+  background: rgba(148, 163, 184, 0.22);
+  color: #cbd5f5;
+}
+
+.score-placeholder {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.55);
+  font-size: 11px;
+  color: #cbd5f5;
+  line-height: 1.4;
 }
 
 .card-header {

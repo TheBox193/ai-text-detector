@@ -7,6 +7,11 @@ import {
   STORAGE_HIGHLIGHT_SETTINGS_KEY
 } from "~utils/highlightSettings"
 import wrapMatch from "~utils/wrapMatch"
+import type {
+  DetectionStats,
+  DetectionType,
+  SeverityLevel
+} from "~types/detectionStats"
 
 import SENTENCE_TARGETS from "../targets/sentenceTargets"
 import { shouldSkipNode } from "../targets/skipTargets"
@@ -42,6 +47,230 @@ const TOOLTIP_MARGIN = 10
 
 let tooltipElement: HTMLDivElement | null = null
 let tooltipTarget: HTMLElement | null = null
+
+const SEVERITY_WEIGHTS: Record<SeverityLevel, number> = {
+  low: 0.35,
+  medium: 0.65,
+  high: 1
+}
+
+const WORD_MATCH_SEVERITY: SeverityLevel = "low"
+const DEFAULT_SENTENCE_WEIGHT = 0.6
+const DEFAULT_WORD_WEIGHT = SEVERITY_WEIGHTS[WORD_MATCH_SEVERITY]
+const MIN_CORE_TEXT_LENGTH = 160
+const WORD_MATCH_SEVERITY_LABEL = "Low"
+const CORE_CONTENT_SELECTORS = [
+  "main[role='main']",
+  "main",
+  "[role='main']",
+  "article[role='article']",
+  "article",
+  "#main-content",
+  "#main",
+  "#content",
+  "#primary",
+  ".main-content",
+  ".article-content",
+  ".post-content",
+  ".entry-content",
+  ".content"
+]
+
+const normalizeWhitespace = (value: string): string =>
+  value.replace(/\s+/g, " ").trim()
+
+const escapeAttribute = (value: string): string =>
+  value.replace(/"/g, "&quot;")
+
+const countWordsFromNormalized = (value: string): number =>
+  value ? value.split(" ").length : 0
+
+const isSeverityLevel = (value: string): value is SeverityLevel =>
+  value === "low" || value === "medium" || value === "high"
+
+const normalizeSeverityValue = (value?: string): SeverityLevel | null => {
+  if (!value) return null
+  const normalized = value.toLowerCase()
+  if (normalized === "med") return "medium"
+  if (isSeverityLevel(normalized)) return normalized
+  return null
+}
+
+const getSeverityWeight = (
+  severity: string | undefined,
+  type: DetectionType
+): number => {
+  const normalized = normalizeSeverityValue(severity)
+  if (normalized) {
+    return SEVERITY_WEIGHTS[normalized]
+  }
+  return type === "word" ? DEFAULT_WORD_WEIGHT : DEFAULT_SENTENCE_WEIGHT
+}
+
+const buildSeverityBreakdown = (): Record<
+  SeverityLevel | "unknown",
+  number
+> => ({
+  low: 0,
+  medium: 0,
+  high: 0,
+  unknown: 0
+})
+
+const getCoreContentRoot = (): Element | null => {
+  for (const selector of CORE_CONTENT_SELECTORS) {
+    const candidate = document.querySelector(selector)
+    if (
+      candidate instanceof HTMLElement &&
+      normalizeWhitespace(candidate.textContent ?? "").length >=
+        MIN_CORE_TEXT_LENGTH
+    ) {
+      return candidate
+    }
+  }
+
+  if (document.body) return document.body
+  if (document.documentElement instanceof HTMLElement) {
+    return document.documentElement
+  }
+  return null
+}
+
+const createWalkerForRoot = (root: Element) =>
+  document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      shouldSkipNode(n)
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT
+  })
+
+const computeCoreTotals = (
+  root: Element | null
+): { totalWords: number; totalCharacters: number } => {
+  if (!root) {
+    return { totalWords: 0, totalCharacters: 0 }
+  }
+
+  const walker = createWalkerForRoot(root)
+  let totalWords = 0
+  let totalCharacters = 0
+
+  for (let node: Node | null; (node = walker.nextNode()); ) {
+    const textNode = node as Text
+    const normalized = normalizeWhitespace(textNode.nodeValue ?? "")
+    if (!normalized) continue
+
+    totalCharacters += normalized.length
+    totalWords += countWordsFromNormalized(normalized)
+  }
+
+  return { totalWords, totalCharacters }
+}
+
+const computeDetectionStats = (): DetectionStats => {
+  const highlightCount = document.querySelectorAll<HTMLElement>(
+    HIGHLIGHT_SELECTOR
+  ).length
+  const severityBreakdown = buildSeverityBreakdown()
+  const typeBreakdown: Record<DetectionType, number> = {
+    sentence: 0,
+    word: 0
+  }
+
+  const coreRoot = getCoreContentRoot()
+  if (!coreRoot) {
+    return {
+      totalWords: 0,
+      totalCharacters: 0,
+      flaggedWords: 0,
+      flaggedCharacters: 0,
+      rawCoverage: 0,
+      weightedCoverage: 0,
+      scorePercent: 0,
+      highlightCount,
+      uniqueDetections: 0,
+      severityBreakdown,
+      typeBreakdown,
+      coreNodeTag: "none"
+    }
+  }
+
+  const { totalWords, totalCharacters } = computeCoreTotals(coreRoot)
+  let flaggedWords = 0
+  let flaggedCharacters = 0
+  let weightedSum = 0
+  let uniqueDetections = 0
+
+  const sentenceMatches = Array.from(
+    coreRoot.querySelectorAll<HTMLElement>(".hl-sentence")
+  )
+  for (const element of sentenceMatches) {
+    const text = normalizeWhitespace(element.textContent ?? "")
+    if (!text) continue
+
+    const words = Math.max(countWordsFromNormalized(text), 1)
+    const severityLevel = normalizeSeverityValue(element.dataset.severity)
+    const weight = getSeverityWeight(severityLevel ?? undefined, "sentence")
+
+    if (severityLevel) {
+      severityBreakdown[severityLevel] += 1
+    } else {
+      severityBreakdown.unknown += 1
+    }
+
+    typeBreakdown.sentence += 1
+    uniqueDetections += 1
+    flaggedWords += words
+    flaggedCharacters += text.length
+    weightedSum += words * weight
+  }
+
+  const wordMatches = Array.from(
+    coreRoot.querySelectorAll<HTMLElement>(".hl-char")
+  )
+  for (const element of wordMatches) {
+    if (element.closest(".hl-sentence")) continue
+
+    const text = normalizeWhitespace(element.textContent ?? "")
+    if (!text) continue
+
+    const words = Math.max(countWordsFromNormalized(text), 1)
+    const severityValue =
+      normalizeSeverityValue(element.dataset.severity) ?? WORD_MATCH_SEVERITY
+    const weight = getSeverityWeight(severityValue, "word")
+
+    severityBreakdown[severityValue] += 1
+    typeBreakdown.word += 1
+    uniqueDetections += 1
+    flaggedWords += words
+    flaggedCharacters += text.length
+    weightedSum += words * weight
+  }
+
+  const rawCoverage =
+    totalWords > 0 ? Math.min(flaggedWords / totalWords, 1) : 0
+  const weightedCoverage =
+    totalWords > 0 ? Math.min(weightedSum / totalWords, 1) : 0
+  const scorePercent = Math.round(weightedCoverage * 1000) / 10
+
+  return {
+    totalWords,
+    totalCharacters,
+    flaggedWords,
+    flaggedCharacters,
+    rawCoverage,
+    weightedCoverage,
+    scorePercent,
+    highlightCount,
+    uniqueDetections,
+    severityBreakdown,
+    typeBreakdown,
+    coreNodeTag:
+      coreRoot instanceof HTMLElement
+        ? coreRoot.tagName.toLowerCase()
+        : "unknown"
+  }
+}
 
 const tooltipSeverityTokens: Record<
   string,
@@ -307,7 +536,7 @@ const runWordHighlight = (style: string) => {
     const html = node.nodeValue.replace(
       RX,
       (match) =>
-        `<span class="hl-char" style="${style}">${match}</span>`
+        `<span class="hl-char" data-detection="word" data-severity="${WORD_MATCH_SEVERITY}" data-severity-label="${WORD_MATCH_SEVERITY_LABEL}" style="${escapeAttribute(style)}">${match}</span>`
     )
     if (html !== node.nodeValue) {
       const wrapper = document.createElement("span")
@@ -350,16 +579,25 @@ const clearHighlights = () => {
     .forEach((wrapper) => unwrapElement(wrapper))
 }
 
-const sendMatchCount = (count: number) => {
-  chrome.runtime.sendMessage({ type: "MATCH_COUNT", count })
+let latestStats: DetectionStats | null = null
+
+const sendMatchStats = (stats: DetectionStats) => {
+  latestStats = stats
+  chrome.runtime.sendMessage({
+    type: "MATCH_STATS",
+    count: stats.highlightCount,
+    stats
+  })
 }
 
 const highlightDocument = (
   styles: ReturnType<typeof computeHighlightFragments>
-): number => {
+): DetectionStats => {
   runSentenceHighlight(styles.sentence)
   runWordHighlight(styles.word)
-  return document.querySelectorAll(HIGHLIGHT_SELECTOR).length
+  const stats = computeDetectionStats()
+  latestStats = stats
+  return stats
 }
 
 const refreshHighlight = async () => {
@@ -374,18 +612,23 @@ const refreshHighlight = async () => {
 
   if (!allowed) {
     clearHighlights()
-    sendMatchCount(0)
+    const stats = computeDetectionStats()
+    sendMatchStats(stats)
     return
   }
 
   clearHighlights()
-  const count = highlightDocument(styles)
-  sendMatchCount(count)
+  const stats = highlightDocument(styles)
+  sendMatchStats(stats)
 }
 
-const handleMatchCountRequest = () => {
-  const count = document.querySelectorAll(HIGHLIGHT_SELECTOR).length
-  sendMatchCount(count)
+const getLatestStats = (): DetectionStats => {
+  if (latestStats) {
+    return latestStats
+  }
+  const stats = computeDetectionStats()
+  latestStats = stats
+  return stats
 }
 
 const isDomReady =
@@ -399,9 +642,15 @@ if (isDomReady) {
   })
 }
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "GET_MATCH_COUNT") {
-    handleMatchCountRequest()
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (
+    message.type === "GET_MATCH_COUNT" ||
+    message.type === "GET_MATCH_STATS"
+  ) {
+    const stats = getLatestStats()
+    sendMatchStats(stats)
+    sendResponse({ stats })
+    return false
   }
   if (message.type === "REFRESH_HIGHLIGHT_STATE") {
     refreshHighlight()
