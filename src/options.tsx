@@ -1,13 +1,16 @@
 import type { CSSProperties } from "react"
 import { useEffect, useMemo, useState } from "react"
 
+import TesterPlayground from "~components/TesterPlayground"
 import {
   DEFAULT_STYLE_SETTINGS,
-  HighlightSettings,
-  HighlightStyleSettings,
   computeHighlightFragments,
   fetchHighlightSettings,
   updateHighlightStyle
+} from "~utils/highlightSettings"
+import type {
+  HighlightSettings,
+  HighlightStyleSettings
 } from "~utils/highlightSettings"
 
 import "./options.css"
@@ -390,6 +393,17 @@ const IndexOptions = () => {
             </span>
           </label>
         </div>
+      </section>
+
+      <section className="options-card playground-card">
+        <div className="card-title">
+          <h2>Run Text Through The Detector</h2>
+          <p className="muted">
+            Paste or type any content to see the live highlights your settings
+            produce.
+          </p>
+        </div>
+        <TesterPlayground variant="embedded" showHeader={false} />
       </section>
 
       <section className="options-card support-card">
